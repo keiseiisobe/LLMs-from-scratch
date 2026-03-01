@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Rotatable 3D Word Embeddings</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body { margin: 0; font-family: sans-serif; background: #f0f0f0; }
+        #plot { width: 100vw; height: 100vh; }
+        #info { position: absolute; top: 10px; left: 10px; background: rgba(255,255,255,0.8); padding: 10px; border-radius: 5px; pointer-events: none; }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <h3>Interactive 3D Word Embeddings</h3>
+        <p>Rotate: Click and Drag<br>Zoom: Scroll Wheel</p>
+    </div>
+    <div id="plot"></div>
+
+    <script>
+        async function loadData() {
+            try {
+                const response = await fetch('embeddings_data.json');
+                const data = await response.json();
+                
+                const traces = {};
+                const categoryColors = {
+                    "Fruits": "#ff7f0e",
+                    "Animals": "#1f77b4",
+                    "Vehicles": "#2ca02c",
+                    "Colors": "#d62728"
+                };
+
+                data.forEach(item => {
+                    if (!traces[item.category]) {
+                        traces[item.category] = {
+                            x: [], y: [], z: [],
+                            text: [],
+                            mode: 'markers+text',
+                            type: 'scatter3d',
+                            name: item.category,
+                            marker: { size: 8, color: categoryColors[item.category] || '#7f7f7f' },
+                            textposition: 'top center'
+                        };
+                    }
+                    traces[item.category].x.push(item.x);
+                    traces[item.category].y.push(item.y);
+                    traces[item.category].z.push(item.z);
+                    traces[item.category].text.push(item.word);
+                });
+
+                const plotData = Object.values(traces);
+                const layout = {
+                    margin: { l: 0, r: 0, b: 0, t: 0 },
+                    scene: {
+                        xaxis: { title: 'Dim 1' },
+                        yaxis: { title: 'Dim 2' },
+                        zaxis: { title: 'Dim 3' }
+                    },
+                    legend: { y: 0.5 }
+                };
+
+                Plotly.newPlot('plot', plotData, layout);
+            } catch (error) {
+                console.error("Error loading JSON data:", error);
+                document.getElementById('plot').innerHTML = "<p style='padding:50px'>Error: Could not load embeddings_data.json. Make sure to run the Python script first and serve this folder via a local server (e.g., 'python3 -m http.server') to avoid CORS issues.</p>";
+            }
+        }
+        loadData();
+    </script>
+</body>
+</html>
